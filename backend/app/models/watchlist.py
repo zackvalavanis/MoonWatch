@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, UniqueConstraint, func
+from sqlalchemy import Column, DateTime, ForeignKey, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.database import Base
@@ -17,6 +17,13 @@ class WatchList(Base):
         unique=True,
         default=uuid.uuid4,
     )
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    coin_id = Column(UUID(as_uuid=True), ForeignKey("coins.id"), nullable=False)
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    coin_id = Column(
+        UUID(as_uuid=True), ForeignKey("coins.id", ondelete="CASCADE"), nullable=False
+    )
     created_at = Column(DateTime(timezone=True), server_default=func.now())
