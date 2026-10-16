@@ -1,7 +1,15 @@
 import enum
 import uuid
 
-from sqlalchemy import Column, DateTime, Enum, ForeignKey, Numeric, func
+from sqlalchemy import (
+    CheckConstraint,
+    Column,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Numeric,
+    func,
+)
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.database import Base
@@ -14,6 +22,10 @@ class TransactionType(str, enum.Enum):
 
 class Transaction(Base):
     __tablename__ = "transactions"
+    __table_args__ = (
+        CheckConstraint("quantity > 0", name="ck_tx_quantity_positive"),
+        CheckConstraint("price_per_coin >= 0", name="ck_tx_price_nonneg"),
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(

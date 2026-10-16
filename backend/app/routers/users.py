@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from app.core.deps import get_current_user
 from app.database import get_db
 from app.models.coin import Coin
@@ -5,10 +7,10 @@ from app.models.user import User
 from app.models.watchlist import WatchList
 from app.schemas.coin import CoinOut
 from app.schemas.user import UserCreate, UserResponse, WatchListCreate, WatchListOut
+from app.services.coinmarketcapdata import get_coin_by_id
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from app.services.coinmarketcapdata import get_coin_by_id
 
 router = APIRouter(prefix="/main", tags=["users"])
 
@@ -56,3 +58,22 @@ def add_to_watchlist(
 
     db.refresh(item)
     return item
+
+
+@router.delete("/watchlist/{coin_id}", status_code=200)
+def delete_coin_from_watchlist(
+    coin_id: UUID,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    coin_to_be_deleted = (
+        db.query(WatchList)
+        .filter(WatchList.user_id == user.id, WatchList.coin_id == coin_id)
+        .first()
+    )
+    if coin_to_be_deleted is None:
+        raise HTTPException(status_code=404, detail="Coin not found")
+
+    db.delete(coin_to_be_deleted)
+    db.commit()
+    return {"message": "The coin has been removed from your watchlist"}

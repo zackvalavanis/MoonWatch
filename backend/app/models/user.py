@@ -23,3 +23,10 @@ class User(Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
+
+    transactions = relationship(
+        "Transaction",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
