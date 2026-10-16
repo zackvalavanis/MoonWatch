@@ -2,6 +2,7 @@ import uuid
 
 from sqlalchemy import Column, DateTime, ForeignKey, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from app.database import Base
 
@@ -27,3 +28,6 @@ class WatchList(Base):
         UUID(as_uuid=True), ForeignKey("coins.id", ondelete="CASCADE"), nullable=False
     )
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", back_populates="watchlist")
+    coin = relationship("Coin")

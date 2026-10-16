@@ -10,14 +10,14 @@ load_dotenv()
 
 import certifi
 
-CMC_URL = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest"
+CMC_LISTINGS_URL = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest"
+CMC_QUOTES_URL = "https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest"
 _context = ssl.create_default_context(cafile=certifi.where())
 
 
-def get_latest_listings(limit: int = 10, convert: str = "USD") -> dict:
-    params = urllib.parse.urlencode({"start": 1, "limit": limit, "convert": convert})
+def _cmc_get(url: str, params: dict) -> dict:
     request = urllib.request.Request(
-        f"{CMC_URL}?{params}",
+        f"{url}?{urllib.parse.urlencode(params)}",
         headers={
             "Accept": "application/json",
             "X-CMC_PRO_API_KEY": os.environ["CMC_API_KEY"],
@@ -27,7 +27,19 @@ def get_latest_listings(limit: int = 10, convert: str = "USD") -> dict:
         return json.load(response)
 
 
+def get_latest_listings(limit: int = 10, convert: str = "USD") -> dict:
+    return _cmc_get(CMC_LISTINGS_URL, {"start": 1, "limit": limit, "convert": convert})
+
+
+def get_coin_by_id(cmc_id: int, convert: str = "USD") -> dict | None:
+    try:
+        data = _cmc_get(CMC_QUOTES_URL, {"id": cmc_id, "convert": convert})
+    except urllib.error.HTTPError as e:
+        if e.code == 400:
+            return None
+        raise
+    return data["data"].get(str(cmc_id))
+
+
 if __name__ == "__main__":
-    data = get_latest_listings(limit=5)
-    for coin in data["data"]:
-        print(coin["symbol"], coin["quote"]["USD"]["price"])
+    print(get_coin_by_id(1))

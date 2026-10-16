@@ -2,6 +2,7 @@ import uuid
 
 from sqlalchemy import Column, DateTime, Integer, String, func
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from app.database import Base
 
@@ -15,3 +16,10 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     hashed_password = Column(String, nullable=False)
+
+    watchlist = relationship(
+        "WatchList",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
