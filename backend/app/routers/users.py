@@ -1,12 +1,22 @@
+from decimal import Decimal
 from uuid import UUID
 
 from app.core.deps import get_current_user
 from app.database import get_db
 from app.models.coin import Coin
+from app.models.transaction import Transaction, TransactionType
 from app.models.user import User
 from app.models.watchlist import WatchList
 from app.schemas.coin import CoinOut
-from app.schemas.user import UserCreate, UserResponse, WatchListCreate, WatchListOut
+from app.schemas.user import (
+    PositionOut,
+    TransactionCreate,
+    TransactionOut,
+    UserCreate,
+    UserResponse,
+    WatchListCreate,
+    WatchListOut,
+)
 from app.services.coinmarketcapdata import get_coin_by_id
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
@@ -77,3 +87,52 @@ def delete_coin_from_watchlist(
     db.delete(coin_to_be_deleted)
     db.commit()
     return {"message": "The coin has been removed from your watchlist"}
+
+
+@router.get("/portfolio", response_model=list[PositionOut])
+def get_portfolio(
+    user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
+
+    transactions = db.query(Transaction).filter(Transaction.user_id == user.id).all()
+
+    positions = {}
+
+    for tx in transactions:
+        p = positions.setdefault(
+            tx.coin_id,
+            {
+                "coin": tx.coin,
+                "net_qty": Decimal(0),
+                "bought_qty": Decimal(0),
+                "bought_cost": Decimal(0),
+            },
+        )
+        if tx.type == TransactionType.BUY:
+            p["net_qty"] += tx.quantity
+            p["bought_qty"] += tx.quantity
+            p["bought_cost"] += tx.quantity * tx.price_per_coin
+        else:
+            p["net_qty"] -= tx.quantity
+    result = []
+
+    for p in positions.values():
+        if p["net_qty"] == 0:
+            continue
+        avg_cost = p["bought_cost"] / p["bought_qty"]
+        current_value = p["net_qty"] * p["coin"].price_usd
+        result.append(
+            PositionOut(
+                coin=p["coin"],
+                net_quantity=p["net_qty"],
+                avg_cost=avg_cost,
+                current_value=current_value,
+                unrealized_pnl=current_value - p["net_qty"] * avg_cost,
+            )
+        )
+    return result
+
+
+@router.post("/transaction", response_model=TransactionCreate)
+def create_transaction(user: User = Depends(get_current_user), db: Session = Depends(get_db)): 
+    new_transaction = 

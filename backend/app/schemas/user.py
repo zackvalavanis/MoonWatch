@@ -37,6 +37,14 @@ class TransactionOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class PositionOut(BaseModel):
+    coin: CoinOut
+    net_quantity: Decimal
+    avg_cost: Decimal
+    current_value: Decimal
+    unrealized_pnl: Decimal
+
+
 class UserResponse(BaseModel):
     id: UUID
     first_name: str | None = None

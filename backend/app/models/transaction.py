@@ -11,6 +11,7 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from app.database import Base
 
@@ -50,3 +51,6 @@ class Transaction(Base):
     executed_at = Column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+
+    user = relationship("User", back_populates="transactions")
+    coin = relationship("Coin")
