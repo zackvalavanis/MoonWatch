@@ -8,4 +8,8 @@ export default defineConfig({
     react(),
     babel({ presets: [reactCompilerPreset()] })
   ],
+  resolve: {
+    // ⬇️ Forces Vite/Rolldown to bundle a single, unified copy of React across pnpm symlinks
+    dedupe: ['react', 'react-dom', 'react-router'],
+  },
 })
