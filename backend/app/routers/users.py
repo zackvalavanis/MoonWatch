@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from decimal import Decimal
 from uuid import UUID
 
@@ -20,7 +21,7 @@ from app.schemas.user import (
 from app.services.coinmarketcapdata import get_coin_by_id
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 router = APIRouter(prefix="/main", tags=["users"])
 
@@ -97,6 +98,7 @@ def get_portfolio(
     transactions = db.query(Transaction).filter(Transaction.user_id == user.id).all()
 
     positions = {}
+    result = []
 
     for tx in transactions:
         p = positions.setdefault(
@@ -133,6 +135,51 @@ def get_portfolio(
     return result
 
 
-@router.post("/transaction", response_model=TransactionCreate)
-def create_transaction(user: User = Depends(get_current_user), db: Session = Depends(get_db)): 
-    new_transaction = 
+@router.post("/transaction", response_model=TransactionOut)
+def create_transaction(
+    transaction_data: TransactionCreate,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # 1. Fetch or create the local Coin record
+    coin = db.query(Coin).filter(Coin.cmc_id == transaction_data.cmc_id).first()
+    if coin is None:
+        data = get_coin_by_id(cmc_id=transaction_data.cmc_id)
+        if data is None:
+            raise HTTPException(status_code=404, detail="Coin not found")
+
+        usd = data["quote"]["USD"]
+        coin = Coin(
+            cmc_id=data["id"],
+            name=data["name"],
+            symbol=data["symbol"],
+            slug=data["slug"],
+            price_usd=usd["price"],
+            percent_change_24h=usd["percent_change_24h"],
+            market_cap=usd["market_cap"],
+        )
+        db.add(coin)
+        db.flush()
+
+    # 2. Instantiate and commit the transaction
+    new_transaction = Transaction(
+        user_id=current_user.id,
+        coin_id=coin.id,
+        type=transaction_data.type.value,
+        quantity=transaction_data.quantity,
+        price_per_coin=transaction_data.price_per_coin,
+        executed_at=transaction_data.executed_at or datetime.now(timezone.utc),
+    )
+    db.add(new_transaction)
+    db.commit()
+
+    # 3. 💡 Eagerly fetch the transaction WITH its nested coin object
+    # This prevents lazy-loading issues and guarantees Pydantic sees 'coin'!
+    fresh_tx = (
+        db.query(Transaction)
+        .options(joinedload(Transaction.coin))
+        .filter(Transaction.id == new_transaction.id)
+        .first()
+    )
+
+    return fresh_tx

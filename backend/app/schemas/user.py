@@ -20,11 +20,12 @@ class WatchListCreate(BaseModel):
 
 
 class TransactionCreate(BaseModel):
-    cmc_id: int
+    cmc_id: int  # 👈 Make sure this says cmc_id, NOT coin_id!
     type: TransactionType
     quantity: Decimal = Field(gt=0)
     price_per_coin: Decimal = Field(ge=0)
     executed_at: datetime | None = None
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TransactionOut(BaseModel):
@@ -33,7 +34,7 @@ class TransactionOut(BaseModel):
     quantity: Decimal
     price_per_coin: Decimal
     executed_at: datetime
-    coin: CoinOut
+    coin: CoinOut  # 👈 This is looking for a whole nested Coin object!
     model_config = ConfigDict(from_attributes=True)
 
 
