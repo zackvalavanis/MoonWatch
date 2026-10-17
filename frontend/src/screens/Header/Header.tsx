@@ -1,7 +1,25 @@
+import { Link } from "react-router"
+import { useNavigate } from "react-router"
+import "./Header.css"
+import TemporaryDrawer from "../../components/MUDrawer"
+
 export function Header() {
+  const navigate = useNavigate();
+
   return (
-    <>
-      <h1>Hello</h1>
-    </>
+    <div className='header'>
+
+      <div className="left-side">
+
+      </div>
+
+      <div className="middle">
+        <img onClick={() => navigate('/')} src="/moonIcon.svg" className="header-moon" alt="Moon Icon" />
+      </div>
+
+      <div className='right-side'>
+        <TemporaryDrawer />
+      </div>
+    </div>
   )
 }
