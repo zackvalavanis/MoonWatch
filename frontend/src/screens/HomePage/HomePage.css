@@ -1,0 +1,20 @@
+.homepage {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  background-color: #111622;
+  color: white;
+  min-height: 150rem;
+}
+
+
+.homepage section {
+  display: flex;
+  height: 50rem;
+  border: 1px solid white;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+  width: 100%;
+}

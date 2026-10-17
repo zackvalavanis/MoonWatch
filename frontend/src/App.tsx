@@ -14,7 +14,7 @@ function App() {
         <main className="app-main">
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/about" element={<AboutPage />} />
+            <Route path="/About" element={<AboutPage />} />
             <Route path="/profile/:userId" element={<ProfilePage />} />
           </Routes>
         </main>

@@ -11,10 +11,12 @@ import ListItemText from '@mui/material/ListItemText';
 import InboxIcon from '@mui/icons-material/MoveToInbox';
 import MailIcon from '@mui/icons-material/Mail';
 import MenuIcon from '@mui/icons-material/Menu';
+import { useNavigate } from 'react-router';
 
 export default function TemporaryDrawer() {
   // Tracks the left drawer's open/close state
   const [isOpen, setIsOpen] = React.useState(false);
+  const navigate = useNavigate();
 
   const toggleDrawer =
     (open: boolean) =>
@@ -30,6 +32,10 @@ export default function TemporaryDrawer() {
         setIsOpen(open);
       };
 
+  const getRoutePath = (text: string) => {
+    return `/${text.toLowerCase().replace(/\s+/g, '-')}`;
+  };
+
   // The slide-out menu layout
   const list = () => (
     <Box
@@ -39,9 +45,9 @@ export default function TemporaryDrawer() {
       onKeyDown={toggleDrawer(false)}
     >
       <List>
-        {['Inbox', 'Starred', 'Send email', 'Drafts'].map((text, index) => (
+        {['Profile', 'Coins', 'Markets', 'About'].map((text, index) => (
           <ListItem key={text} disablePadding>
-            <ListItemButton>
+            <ListItemButton onClick={() => navigate(getRoutePath(text))}>
               <ListItemIcon>
                 {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
               </ListItemIcon>
@@ -52,13 +58,14 @@ export default function TemporaryDrawer() {
       </List>
       <Divider />
       <List>
-        {['All mail', 'Trash', 'Spam'].map((text, index) => (
+        {['Login', 'Sign Up', 'Logout'].map((text, index) => (
           <ListItem key={text} disablePadding>
-            <ListItemButton>
+            <ListItemButton onClick={() => navigate(getRoutePath(text))}>
               <ListItemIcon>
                 {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
               </ListItemIcon>
               <ListItemText primary={text} />
+
             </ListItemButton>
           </ListItem>
         ))}
@@ -68,7 +75,6 @@ export default function TemporaryDrawer() {
 
   return (
     <header className="header">
-      {/* 1. LEFT SIDE: Menu Icon Button & Drawer */}
       <div className="left-side">
         <IconButton
           onClick={toggleDrawer(true)}
