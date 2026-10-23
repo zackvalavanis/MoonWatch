@@ -13,6 +13,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const api = import.meta.env.VITE_BACKEND_API
   console.log(api)
 
+
+  const logout = () => {
+    setToken(null)
+    localStorage.removeItem("Access_token")
+    setUser(null)
+  }
+
   const login = async (credentials: LoginInfo) => {
     setLoading(true)
     try {
@@ -23,26 +30,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
 
       if (!res.ok) {
-        console.log("Error")
-        return;
+        throw new Error(data.detail || "Login Failed")
       }
 
       if (!data?.access_token) {
-        console.log("No access token returned from the servere")
-        return;
+        throw new Error('Something went wrong')
       }
+
+      const accessToken = data.access_token
       console.log(data)
-      localStorage.setItem("Access_token", data.access_token)
-      setToken(data.access_token)
+      localStorage.setItem("Access_token", accessToken)
+      setToken(accessToken)
+
+      try {
+        const get_current_user = await fetch(`${api}/auth/me`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })
+
+        if (!get_current_user.ok) {
+          logout()
+          throw new Error("Couldn't load your account. Please try again.")
+        }
+
+        const currentUser = await get_current_user.json()
+        setUser(currentUser)
+      } catch (error) {
+        logout()
+        throw new Error("Couldn't load your account. Please try again.")
+      }
     } catch (error) {
-      console.error("Error", error)
+      console.error("Login error", error)
+      throw error
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, loading }}>
+    <AuthContext.Provider value={{ user, login, loading, logout }}>
       {children}
     </AuthContext.Provider>
   )
