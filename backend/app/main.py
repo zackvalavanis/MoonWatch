@@ -5,9 +5,12 @@ from app.models import coin, user, watchlist, transaction  # noqa: F401
 from app.routers.auth import router as auth_router
 from app.routers.users import router as user_router
 from app.routers.coins import router as coins_router
-
+from app.config import CORS_ORIGINS
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+app.add_middleware(CORSMiddleware, CORS_ORIGINS, allow_methods=["*"])
 
 Base.metadata.create_all(bind=engine)
 

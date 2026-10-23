@@ -5,6 +5,7 @@ CORS_ORIGINS = [
     "https://localhost:5173",
     "https://localhost:5174",
     "https://localhost:5175",
+    "http://localhost:5173",
 ]
 
 

@@ -1,10 +1,14 @@
+import { useAuth } from "../../auth/AuthContext";
 import "./HomePage.css"
 
+
 export function HomePage() {
+  console.log(useAuth());
   return (
     <div className="homepage">
       <section>
         <h1>Section 1</h1>
+
 
 
       </section>
