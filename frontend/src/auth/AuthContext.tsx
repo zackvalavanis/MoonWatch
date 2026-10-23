@@ -11,10 +11,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const api = import.meta.env.VITE_BACKEND_API
-  console.log(api)
-
-
-
 
   const logout = () => {
     setToken(null)
