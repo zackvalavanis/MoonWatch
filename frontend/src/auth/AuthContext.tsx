@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react"
+import React, { useContext, useEffect, useState } from "react"
 import type { LoginInfo, User } from "../types/types"
 import type { AuthContextType } from "../types/types"
 import { createContext } from "react"
@@ -9,9 +9,11 @@ const AuthContext = createContext<AuthContextType | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const api = import.meta.env.VITE_BACKEND_API
   console.log(api)
+
+
 
 
   const logout = () => {
@@ -20,8 +22,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
   }
 
+  const get_me = async (accessToken: string) => {
+    try {
+      const get_current_user = await fetch(`${api}/auth/me`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+
+      if (!get_current_user.ok) {
+        logout()
+        throw new Error("Couldn't load your account. Please try again.")
+      }
+
+      const currentUser = await get_current_user.json()
+      setUser(currentUser)
+    } catch (error) {
+      logout()
+      throw new Error("Couldn't load your account. Please try again.")
+    }
+  }
+
   const login = async (credentials: LoginInfo) => {
-    setLoading(true)
     try {
       const res = await fetch(`${api}/auth/login`, {
         "method": "POST",
@@ -42,32 +65,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("Access_token", accessToken)
       setToken(accessToken)
 
-      try {
-        const get_current_user = await fetch(`${api}/auth/me`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
+      await get_me(accessToken)
 
-        if (!get_current_user.ok) {
-          logout()
-          throw new Error("Couldn't load your account. Please try again.")
-        }
-
-        const currentUser = await get_current_user.json()
-        setUser(currentUser)
-      } catch (error) {
-        logout()
-        throw new Error("Couldn't load your account. Please try again.")
-      }
     } catch (error) {
       console.error("Login error", error)
       throw error
-    } finally {
-      setLoading(false)
     }
   }
+
+  useEffect(() => {
+    const restoreSession = async () => {
+      const saved_token = localStorage.getItem("Access_token")
+
+      if (!saved_token) {
+        setLoading(false)
+        return
+      }
+
+      try {
+        await get_me(saved_token)
+        setToken(saved_token)
+      } catch {
+        console.log("Something Went Wrong")
+      } finally {
+        setLoading(false)
+      }
+    }
+    restoreSession()
+  }, [])
 
   return (
     <AuthContext.Provider value={{ user, login, loading, logout }}>

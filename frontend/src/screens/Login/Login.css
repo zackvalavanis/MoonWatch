@@ -1,0 +1,187 @@
+/* 1. Global Reset & Variables Setup */
+:root {
+  --primary-color: #6366f1;
+  /* Modern Indigo */
+  --primary-hover: #4f46e5;
+  --bg-dark: #080644;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+  --radius-lg: 12px;
+  --radius-md: 8px;
+  --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* 2. Main Layout Container */
+.login-page {
+  display: flex;
+  min-height: 100vh;
+  width: 100vw;
+  background-color: #f8fafc;
+  color: var(--text-main);
+  overflow: hidden;
+}
+
+/* 3. Left Panel (The Premium Branding Section) */
+.left-side-page {
+  width: 42%;
+  /* Asymmetric split looks more premium than 50/50 */
+  align-self: stretch;
+  background: radial-gradient(circle at top left, rgba(131, 133, 165, 0.15), transparent),
+    var(--sidebar-bg, rgba(2, 1, 28, 0.95));
+  /* Darker base for high-contrast luxury look */
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  /* Pushes content to top and bottom beautifully */
+  padding: 4rem 3.5rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.518);
+  position: relative;
+}
+
+/* Add a subtle geometric ambient glow in the background */
+.left-side-page::before {
+  content: '';
+  position: absolute;
+  bottom: -10%;
+  right: -10%;
+  width: 300px;
+  height: 300px;
+  background: var(--primary-color);
+  filter: blur(120px);
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+.left-side-page h1 {
+  color: #ffffff;
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.left-side-page p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+/* 4. Right Panel (The Clean Form Container) */
+.right-side-page {
+  width: 58%;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem;
+  background-color: #ffffff;
+}
+
+/* 5. The Pro Form Architecture */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 380px;
+  gap: 1.5rem;
+}
+
+.form-header {
+  margin-bottom: 0.5rem;
+}
+
+.form-header h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+}
+
+.form-header p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+/* 6. Form Fields & Interactive Micro-animations */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.input-group label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: var(--transition-smooth);
+}
+
+/* Elite focus ring effects */
+.input-group input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+}
+
+/* 7. Action Button */
+.submit-btn {
+  width: 100%;
+  padding: 0.85rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.submit-btn:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(6, 6, 45, 0.2);
+}
+
+.submit-btn:active {
+  transform: translateY(0);
+}
+
+/* 8. Mobile Responsiveness */
+@media (max-width: 900px) {
+  .login-page {
+    flex-direction: column;
+  }
+
+  .left-side-page {
+    display: none;
+    /* Modern apps hide the heavy splash side on mobile */
+  }
+
+  .right-side-page {
+    width: 100%;
+    padding: 2rem;
+  }
+}

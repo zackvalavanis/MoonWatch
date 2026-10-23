@@ -1,9 +1,9 @@
-import { useAuth } from "../../auth/AuthContext";
+
 import "./HomePage.css"
 
 
 export function HomePage() {
-  console.log(useAuth());
+
   return (
     <div className="homepage">
       <section>
