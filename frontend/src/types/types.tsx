@@ -17,4 +17,5 @@ export interface AuthContextType {
   loading: boolean
   login: (credentials: LoginInfo) => Promise<void>
   logout: () => void
+  token: string | null
 }

@@ -1,0 +1,101 @@
+import { useEffect, useState } from "react"
+import type { ReactNode } from "react"
+import type { LoginInfo, User } from "../types/types"
+import { AuthContext } from "./AuthContext"
+
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null)
+  const [token, setToken] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const api = import.meta.env.VITE_BACKEND_API
+
+
+  const logout = () => {
+    setToken(null)
+    localStorage.removeItem("Access_token")
+    setUser(null)
+  }
+
+  const get_me = async (accessToken: string) => {
+    try {
+      const get_current_user = await fetch(`${api}/auth/me`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+
+      if (!get_current_user.ok) {
+        logout()
+        throw new Error("Couldn't load your account. Please try again.", {
+          cause: get_current_user,
+        })
+      }
+      const currentUser = await get_current_user.json()
+      setUser(currentUser)
+    } catch (error) {
+      logout()
+      throw new Error("Couldn't load your account. Please try again.", {
+        cause: error,
+      })
+    }
+  }
+
+  const login = async (credentials: LoginInfo) => {
+    try {
+      const res = await fetch(`${api}/auth/login`, {
+        "method": "POST",
+        body: new URLSearchParams({ username: credentials.email, password: credentials.password })
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data?.detail || "Login Failed")
+      }
+
+      if (!data?.access_token) {
+        throw new Error("Something went wrong")
+      }
+
+      const accessToken = data.access_token
+      localStorage.setItem("Access_token", accessToken)
+      setToken(accessToken)
+
+      await get_me(accessToken)
+
+    } catch (error) {
+      console.error("Login error", error)
+      throw error
+    }
+  }
+
+  useEffect(() => {
+    const restoreSession = async () => {
+      const saved_token = localStorage.getItem("Access_token")
+
+      if (!saved_token) {
+        setLoading(false)
+        return
+      }
+
+      try {
+        await get_me(saved_token)
+        setToken(saved_token)
+      } catch {
+        console.log("Something Went Wrong")
+      } finally {
+        setLoading(false)
+      }
+    }
+    restoreSession()
+  }, [])
+
+  return (
+    <AuthContext.Provider value={{ user, login, loading, logout, token }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+

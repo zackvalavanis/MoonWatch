@@ -1,12 +1,12 @@
 import { useState } from "react"
-import { useAuth } from "../../auth/AuthContext"
+import { useAuth } from "../../auth/useAuth"
 import type { FormEvent } from "react"
 import './Login.css'
 import { useNavigate } from "react-router"
 
 
 export function Login() {
-  const { login } = useAuth()
+  const { login, user } = useAuth()
   const [username, setUserName] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -25,7 +25,9 @@ export function Login() {
         setError("Something went wrong")
       }
     }
-    navigate('/')
+    if (user) {
+      navigate('/')
+    }
   }
 
   return (
