@@ -18,7 +18,8 @@ export default function TemporaryDrawer() {
   // Tracks the left drawer's open/close state
   const [isOpen, setIsOpen] = React.useState(false);
   const navigate = useNavigate();
-  const { logout } = useAuth()
+  const { logout, user } = useAuth()
+
 
   const toggleDrawer =
     (open: boolean) =>
@@ -49,7 +50,20 @@ export default function TemporaryDrawer() {
       <List>
         {['Profile', 'Coins', 'Markets', 'About'].map((text, index) => (
           <ListItem key={text} disablePadding>
-            <ListItemButton onClick={() => navigate(getRoutePath(text))}>
+            <ListItemButton onClick={() => {
+              if (text == "Profile") {
+                if (user) {
+                  navigate(getRoutePath(text + `/${user?.id}`))
+                } else {
+                  navigate('/login', {
+                    state: { message: "Please Login to view your profile." }
+                  })
+                }
+              } else {
+                navigate(getRoutePath(text))
+              }
+            }}
+            >
               <ListItemIcon>
                 {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
               </ListItemIcon>

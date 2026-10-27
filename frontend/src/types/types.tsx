@@ -1,7 +1,18 @@
 
+export interface Coin {
+  id: string
+  cmc_id: number
+  name: string
+  symbol: string
+  slug: string
+  price_usd: string
+  percent_change_24h: string
+  market_cap: string
+}
 
 
 export interface User {
+  id: string | null
   token: string | null
   first_name: string
   last_name: string
@@ -19,3 +30,11 @@ export interface AuthContextType {
   logout: () => void
   token: string | null
 }
+
+export interface WatchlistItem {
+  id: string
+  created_at: string
+  coin: Coin
+}
+
+export type Watchlist = WatchlistItem[]

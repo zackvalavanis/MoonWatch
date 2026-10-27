@@ -2,7 +2,7 @@ import { useState } from "react"
 import { useAuth } from "../../auth/useAuth"
 import type { FormEvent } from "react"
 import './Login.css'
-import { useNavigate } from "react-router"
+import { useLocation, useNavigate } from "react-router"
 
 
 export function Login() {
@@ -11,6 +11,8 @@ export function Login() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
+  const location = useLocation()
+  const message = location.state?.message
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -49,6 +51,7 @@ export function Login() {
           <div className="form-header">
             <h2>Welcome back</h2>
             <p>Enter your details to sign in to your workspace</p>
+
           </div>
 
           <div className="input-group">
@@ -74,6 +77,7 @@ export function Login() {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
+          {message && <p className="login-notice">{message}</p>}
 
           <button type="submit" className="submit-btn">Sign in to Account</button>
         </form>
