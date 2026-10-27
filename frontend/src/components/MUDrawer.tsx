@@ -12,11 +12,13 @@ import InboxIcon from '@mui/icons-material/MoveToInbox';
 import MailIcon from '@mui/icons-material/Mail';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useNavigate } from 'react-router';
+import { useAuth } from '../auth/useAuth';
 
 export default function TemporaryDrawer() {
   // Tracks the left drawer's open/close state
   const [isOpen, setIsOpen] = React.useState(false);
   const navigate = useNavigate();
+  const { logout } = useAuth()
 
   const toggleDrawer =
     (open: boolean) =>
@@ -60,7 +62,14 @@ export default function TemporaryDrawer() {
       <List>
         {['Login', 'Sign Up', 'Logout'].map((text, index) => (
           <ListItem key={text} disablePadding>
-            <ListItemButton onClick={() => navigate(getRoutePath(text))}>
+            <ListItemButton onClick={() => {
+              if (text == "Logout") {
+                logout();
+                navigate('/login');
+              } else {
+                navigate(getRoutePath(text));
+              }
+            }}>
               <ListItemIcon>
                 {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
               </ListItemIcon>
@@ -70,7 +79,7 @@ export default function TemporaryDrawer() {
           </ListItem>
         ))}
       </List>
-    </Box>
+    </Box >
   );
 
   return (
