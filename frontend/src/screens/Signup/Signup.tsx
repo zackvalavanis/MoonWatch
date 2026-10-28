@@ -2,6 +2,7 @@ import { useState } from "react"
 import "./Signup.css"
 import { useNavigate } from "react-router"
 import type { SignupInfo } from "../../types/types"
+import { useAuth } from "../../auth/useAuth"
 
 
 export function Signup() {
@@ -12,6 +13,7 @@ export function Signup() {
   const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
   const api = import.meta.env.VITE_BACKEND_API
+  const { login } = useAuth()
 
   const handleSignup = async (credentials: SignupInfo) => {
     try {
@@ -29,9 +31,8 @@ export function Signup() {
         throw new Error("There was an error signing up.")
       }
 
-      const data = await res.json()
-      console.log(data)
-      navigate("/login")
+      await login({ email: credentials.email, password: credentials.password })
+      navigate("/")
     } catch (error) {
       setError(error instanceof Error ? error.message : "Failed to signup")
     }
