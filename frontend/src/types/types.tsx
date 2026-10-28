@@ -23,6 +23,14 @@ export interface LoginInfo {
   password: string
 }
 
+export interface SignupInfo {
+  first_name: string
+  last_name: string
+  email: string
+  password: string
+}
+
+
 export interface AuthContextType {
   user: User | null
   loading: boolean

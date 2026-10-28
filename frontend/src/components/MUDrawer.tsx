@@ -74,7 +74,7 @@ export default function TemporaryDrawer() {
       </List>
       <Divider />
       <List>
-        {['Login', 'Sign Up', 'Logout'].map((text, index) => (
+        {['Login', 'Signup', 'Logout'].map((text, index) => (
           <ListItem key={text} disablePadding>
             <ListItemButton onClick={() => {
               if (text == "Logout") {
