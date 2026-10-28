@@ -24,16 +24,9 @@ export function ProfilePage() {
       <div className='name-top-left'>
         {user && <p>{user.first_name + " " + user.last_name}</p>}
       </div>
-      <WatchlistCards watchlist={watchlist} />
 
       <div className='middle-section'>
-        {watchlist?.map((coin) => (
-          <div key={coin.id}>
-            <h1>{coin.coin.name}</h1>
-          </div>
-        ))}
-
-
+        <WatchlistCards watchlist={watchlist} />
       </div>
     </div>
   )
