@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../../auth/useAuth";
 import { fetch_watchlist } from "../../hooks/fetchwatchlist";
 import type { Watchlist } from "../../types/types";
+import { WatchlistCards } from "../../components/watchlist_cards"
 
 export function ProfilePage() {
   const { user, token } = useAuth();
@@ -23,6 +24,7 @@ export function ProfilePage() {
       <div className='name-top-left'>
         {user && <p>{user.first_name + " " + user.last_name}</p>}
       </div>
+      <WatchlistCards watchlist={watchlist} />
 
       <div className='middle-section'>
         {watchlist?.map((coin) => (
