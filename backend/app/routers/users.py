@@ -1,4 +1,5 @@
-from datetime import datetime, timezone
+import urllib.error
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from uuid import UUID
 
@@ -8,13 +9,10 @@ from app.models.coin import Coin
 from app.models.transaction import Transaction, TransactionType
 from app.models.user import User
 from app.models.watchlist import WatchList
-from app.schemas.coin import CoinOut
 from app.schemas.user import (
     PositionOut,
     TransactionCreate,
     TransactionOut,
-    UserCreate,
-    UserResponse,
     WatchListCreate,
     WatchListOut,
 )
@@ -25,13 +23,77 @@ from sqlalchemy.orm import Session, joinedload
 
 router = APIRouter(prefix="/main", tags=["users"])
 
+STALE_AFTER = timedelta(seconds=60)
+
+
+# ---------- coin helpers ----------
+
+
+def _dec(value):
+    """CMC returns floats; convert to Decimal for Numeric columns."""
+    return None if value is None else Decimal(str(value))
+
+
+def _apply_cmc_data(coin: Coin, data: dict) -> None:
+    usd = data["quote"]["USD"]
+    coin.cmc_id = data["id"]
+    coin.name = data["name"]
+    coin.symbol = data["symbol"]
+    coin.slug = data.get("slug")
+    coin.price_usd = _dec(usd.get("price"))
+    coin.market_cap = _dec(usd.get("market_cap"))
+    coin.percent_change_1h = usd.get("percent_change_1h")
+    coin.percent_change_24h = usd.get("percent_change_24h")
+    coin.percent_change_7d = usd.get("percent_change_7d")
+    coin.percent_change_30d = usd.get("percent_change_30d")
+    coin.percent_change_60d = usd.get("percent_change_60d")
+    coin.percent_change_90d = usd.get("percent_change_90d")
+    coin.volume = usd.get("volume_24h")
+    coin.volume_change_24h = usd.get("volume_change_24h")
+    coin.market_cap_dominance = usd.get("market_cap_dominance")
+    coin.fully_diluted_market_cap = usd.get("fully_diluted_market_cap")
+    coin.last_updated = datetime.now(timezone.utc)  # when WE last fetched it
+
+
+def get_or_refresh_coin(db: Session, cmc_id: int) -> Coin:
+    """Return a fresh Coin, creating it or refetching from CMC if stale."""
+    coin = db.query(Coin).filter(Coin.cmc_id == cmc_id).first()
+
+    if (
+        coin
+        and coin.last_updated
+        and datetime.now(timezone.utc) - coin.last_updated < STALE_AFTER
+    ):
+        return coin
+
+    try:
+        data = get_coin_by_id(cmc_id=cmc_id)
+    except urllib.error.URLError:
+        if coin:
+            return coin  # CMC down or rate-limited: serve stale data
+        raise HTTPException(status_code=502, detail="Price service unavailable")
+
+    if data is None:
+        if coin:
+            return coin
+        raise HTTPException(status_code=404, detail="Coin not found")
+
+    if coin is None:
+        coin = Coin()
+        db.add(coin)
+    _apply_cmc_data(coin, data)
+    db.flush()
+    return coin
+
+
+# ---------- watchlist ----------
+
 
 @router.get("/watchlist", response_model=list[WatchListOut])
 def get_my_watchlist(
     current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
-    watchlist = db.query(WatchList).filter(WatchList.user_id == current_user.id).all()
-    return watchlist
+    return db.query(WatchList).filter(WatchList.user_id == current_user.id).all()
 
 
 @router.post("/watchlist", response_model=WatchListOut, status_code=201)
@@ -40,25 +102,7 @@ def add_to_watchlist(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-
-    coin = db.query(Coin).filter(Coin.cmc_id == payload.cmc_id).first()
-    if coin is None:
-        data = get_coin_by_id(cmc_id=payload.cmc_id)
-        if data is None:
-            raise HTTPException(status_code=404, detail="Coin not found")
-
-        usd = data["quote"]["USD"]
-        coin = Coin(
-            cmc_id=data["id"],
-            name=data["name"],
-            symbol=data["symbol"],
-            slug=data["slug"],
-            price_usd=usd["price"],
-            percent_change_24h=usd["percent_change_24h"],
-            market_cap=usd["market_cap"],
-        )
-        db.add(coin)
-        db.flush()
+    coin = get_or_refresh_coin(db, payload.cmc_id)
     item = WatchList(user_id=current_user.id, coin_id=coin.id)
     db.add(item)
     try:
@@ -66,7 +110,6 @@ def add_to_watchlist(
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=409, detail="Coin already in watchlist")
-
     db.refresh(item)
     return item
 
@@ -77,34 +120,38 @@ def delete_coin_from_watchlist(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    coin_to_be_deleted = (
+    item = (
         db.query(WatchList)
         .filter(WatchList.user_id == user.id, WatchList.coin_id == coin_id)
         .first()
     )
-    if coin_to_be_deleted is None:
+    if item is None:
         raise HTTPException(status_code=404, detail="Coin not found")
-
-    db.delete(coin_to_be_deleted)
+    db.delete(item)
     db.commit()
     return {"message": "The coin has been removed from your watchlist"}
+
+
+# ---------- portfolio ----------
 
 
 @router.get("/portfolio", response_model=list[PositionOut])
 def get_portfolio(
     user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
-
-    transactions = db.query(Transaction).filter(Transaction.user_id == user.id).all()
+    transactions = (
+        db.query(Transaction)
+        .options(joinedload(Transaction.coin))
+        .filter(Transaction.user_id == user.id)
+        .all()
+    )
 
     positions = {}
-    result = []
-
     for tx in transactions:
         p = positions.setdefault(
             tx.coin_id,
             {
-                "coin": tx.coin,
+                "cmc_id": tx.coin.cmc_id,
                 "net_qty": Decimal(0),
                 "bought_qty": Decimal(0),
                 "bought_cost": Decimal(0),
@@ -116,16 +163,25 @@ def get_portfolio(
             p["bought_cost"] += tx.quantity * tx.price_per_coin
         else:
             p["net_qty"] -= tx.quantity
-    result = []
 
+    # Refresh prices for coins still held, then save them
     for p in positions.values():
-        if p["net_qty"] == 0:
+        if p["net_qty"] > 0:
+            p["coin"] = get_or_refresh_coin(db, p["cmc_id"])
+    db.commit()
+
+    result = []
+    for p in positions.values():
+        if p["net_qty"] <= 0 or p["bought_qty"] == 0:
             continue
+        coin = p["coin"]
         avg_cost = p["bought_cost"] / p["bought_qty"]
-        current_value = p["net_qty"] * p["coin"].price_usd
+        if coin.price_usd is None:
+            continue
+        current_value = p["net_qty"] * coin.price_usd
         result.append(
             PositionOut(
-                coin=p["coin"],
+                coin=coin,
                 net_quantity=p["net_qty"],
                 avg_cost=avg_cost,
                 current_value=current_value,
@@ -135,33 +191,17 @@ def get_portfolio(
     return result
 
 
-@router.post("/transaction", response_model=TransactionOut)
+# ---------- transactions ----------
+
+
+@router.post("/transaction", response_model=TransactionOut, status_code=201)
 def create_transaction(
     transaction_data: TransactionCreate,
-    current_user=Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    # 1. Fetch or create the local Coin record
-    coin = db.query(Coin).filter(Coin.cmc_id == transaction_data.cmc_id).first()
-    if coin is None:
-        data = get_coin_by_id(cmc_id=transaction_data.cmc_id)
-        if data is None:
-            raise HTTPException(status_code=404, detail="Coin not found")
+    coin = get_or_refresh_coin(db, transaction_data.cmc_id)
 
-        usd = data["quote"]["USD"]
-        coin = Coin(
-            cmc_id=data["id"],
-            name=data["name"],
-            symbol=data["symbol"],
-            slug=data["slug"],
-            price_usd=usd["price"],
-            percent_change_24h=usd["percent_change_24h"],
-            market_cap=usd["market_cap"],
-        )
-        db.add(coin)
-        db.flush()
-
-    # 2. Instantiate and commit the transaction
     new_transaction = Transaction(
         user_id=current_user.id,
         coin_id=coin.id,
@@ -173,13 +213,9 @@ def create_transaction(
     db.add(new_transaction)
     db.commit()
 
-    # 3. 💡 Eagerly fetch the transaction WITH its nested coin object
-    # This prevents lazy-loading issues and guarantees Pydantic sees 'coin'!
-    fresh_tx = (
+    return (
         db.query(Transaction)
         .options(joinedload(Transaction.coin))
         .filter(Transaction.id == new_transaction.id)
         .first()
     )
-
-    return fresh_tx

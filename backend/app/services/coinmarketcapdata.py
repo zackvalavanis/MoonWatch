@@ -27,7 +27,7 @@ def _cmc_get(url: str, params: dict) -> dict:
         return json.load(response)
 
 
-def get_latest_listings(limit: int = 10, convert: str = "USD") -> dict:
+def get_latest_listings(limit: int = 50, convert: str = "USD") -> dict:
     return _cmc_get(CMC_LISTINGS_URL, {"start": 1, "limit": limit, "convert": convert})
 
 

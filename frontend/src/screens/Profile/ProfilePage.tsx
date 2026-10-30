@@ -8,6 +8,8 @@ export function ProfilePage() {
   const { user, token } = useAuth();
   const [watchlist, setWatchlist] = useState<Watchlist>([])
 
+  console.log(watchlist)
+
 
   useEffect(() => {
     if (!token) return;
