@@ -1,15 +1,23 @@
-
 export interface Coin {
   id: string
   cmc_id: number
   name: string
   symbol: string
-  slug: string
-  price_usd: string
-  percent_change_24h: string
-  market_cap: string
+  slug: string | null
+  price_usd: string | null
+  market_cap: string | null
+  percent_change_1h: number | null
+  percent_change_24h: number | null
+  percent_change_7d: number | null
+  percent_change_30d: number | null
+  percent_change_60d: number | null
+  percent_change_90d: number | null
+  volume: number | null
+  volume_change_24h: number | null
+  market_cap_dominance: number | null
+  fully_diluted_market_cap: number | null
+  last_updated: string | null
 }
-
 
 export interface User {
   id: string | null
@@ -30,7 +38,6 @@ export interface SignupInfo {
   password: string
 }
 
-
 export interface AuthContextType {
   user: User | null
   loading: boolean
@@ -46,3 +53,8 @@ export interface WatchlistItem {
 }
 
 export type Watchlist = WatchlistItem[]
+
+export interface WatchListModalProps {
+  item: WatchlistItem | null
+  onClose: () => void
+}
