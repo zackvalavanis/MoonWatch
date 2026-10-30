@@ -93,25 +93,22 @@ def get_or_refresh_coin(db: Session, cmc_id: int) -> Coin:
 def get_my_watchlist(
     current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
-    return db.query(WatchList).filter(WatchList.user_id == current_user.id).all()
+    items = (
+        db.query(WatchList)
+        .options(joinedload(WatchList.coin))
+        .filter(WatchList.user_id == current_user.id)
+        .all()
+    )
+    for item in items:
+        get_or_refresh_coin(db, item.coin.cmc_id)
+    db.commit()
 
-
-@router.post("/watchlist", response_model=WatchListOut, status_code=201)
-def add_to_watchlist(
-    payload: WatchListCreate,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    coin = get_or_refresh_coin(db, payload.cmc_id)
-    item = WatchList(user_id=current_user.id, coin_id=coin.id)
-    db.add(item)
-    try:
-        db.commit()
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(status_code=409, detail="Coin already in watchlist")
-    db.refresh(item)
-    return item
+    return (
+        db.query(WatchList)
+        .options(joinedload(WatchList.coin))
+        .filter(WatchList.user_id == current_user.id)
+        .all()
+    )
 
 
 @router.delete("/watchlist/{coin_id}", status_code=200)

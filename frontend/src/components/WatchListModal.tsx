@@ -9,6 +9,9 @@ type Props = {
 }
 
 export function WatchListModal({ item, onClose }: Props) {
+  const changeColor = (value: number | null) =>
+    value == null ? "text.secondary" : value < 0 ? "error.main" : "success.main"
+
   return (
     <Modal open={item !== null} onClose={onClose}>
       <Box
@@ -30,7 +33,27 @@ export function WatchListModal({ item, onClose }: Props) {
               {item.coin.name} ({item.coin.symbol})
             </Typography>
             <Typography>Price: ${Number(item.coin.price_usd).toLocaleString()}</Typography>
-            <Typography>24h: {item.coin.percent_change_24h?.toFixed(2)}%</Typography>
+
+            <Typography sx={{ color: changeColor(item.coin.percent_change_1h) }}>
+              1h: {item.coin.percent_change_1h?.toFixed(2)}%
+            </Typography>
+
+            <Typography sx={{ color: changeColor(item.coin.percent_change_24h) }}>
+              24h: {item.coin.percent_change_24h?.toFixed(2)}%
+            </Typography>
+
+            <Typography sx={{ color: changeColor(item.coin.percent_change_30d) }}>
+              30d: {item.coin.percent_change_30d?.toFixed(2)}%
+            </Typography>
+
+            <Typography sx={{ color: changeColor(item.coin.percent_change_60d) }}>
+              60d: {item.coin.percent_change_60d?.toFixed(2) ?? "—"}%
+            </Typography>
+            <Typography>Market cap: ${Number(item.coin.market_cap).toLocaleString(undefined, { maximumFractionDigits: 0 })}</Typography>
+            <div>
+              <h1>GRAPH HERE</h1>
+            </div>
+
           </>
         )}
       </Box>
