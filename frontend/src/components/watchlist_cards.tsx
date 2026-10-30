@@ -17,21 +17,37 @@ export function WatchlistCards({ watchlist }: Props) {
 
   return (
     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-      {watchlist.map((item) => (
-        <Card key={item.id} variant="outlined" sx={{ minWidth: 275 }}>
-          <CardContent>
-            <Typography gutterBottom sx={{ color: "text.secondary", fontSize: 14 }}>
-              Watchlist
-            </Typography>
-            <Typography variant="h5" component="div">
-              {item.coin.name}
-            </Typography>
-          </CardContent>
-          <CardActions>
-            <Button size="small">View</Button>
-          </CardActions>
-        </Card>
-      ))}
+      {watchlist.map((item) => {
+        const percentChange = Number(item.coin.percent_change_24h)
+
+        return (
+          <Card
+            key={item.id}
+            variant="outlined"
+            sx={{
+              backgroundColor:
+                item.coin.percent_change_24h == null
+                  ? "inherit"
+                  : percentChange < 0
+                    ? "error.main"
+                    : "success.main",
+              minWidth: 275,
+            }}
+          >
+            <CardContent>
+              <Typography gutterBottom sx={{ color: "text.secondary", fontSize: 14 }}>
+                Watchlist
+              </Typography>
+              <Typography variant="h5" component="div">
+                {item.coin.name}
+              </Typography>
+            </CardContent>
+            <CardActions>
+              <Button size="small">View</Button>
+            </CardActions>
+          </Card>
+        )
+      })}
     </Box>
   )
 }
